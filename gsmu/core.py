@@ -16,17 +16,25 @@ def make_prs(org, repo, config):
     with tempfile.TemporaryDirectory() as tmpdir:
         destination = Path(tmpdir) / name
         cmd = f"git clone --depth=50 {clone_url} {destination}".split()
-        popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        r = popen.communicate()
-        assert not r[1], r[1]
+        completed_process = subprocess.run(cmd, capture_output=True)
+        if completed_process.returncode:
+            raise GitCloneError(completed_process.stderr.decode("utf-8"))
         make_branch(destination, config)
 
 
-class SubmoduleFindingError(Exception):
+class CoreException(Exception):
+    """Exists for the benefit of making the cli easier to catch exceptions."""
+
+
+class GitCloneError(CoreException):
+    """When struggling to do the git clone thing."""
+
+
+class SubmoduleFindingError(CoreException):
     """when struggling to find the submodule."""
 
 
-class PullRequestError(Exception):
+class PullRequestError(CoreException):
     """when struggling to find, edit, or make pull request."""
 
 

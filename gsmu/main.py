@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 import click
 
-from .core import make_prs, PullRequestError
+from .core import make_prs, CoreException
 
 
 @click.command()
@@ -46,11 +46,15 @@ def cli(repo, branch, submodule, submodule_branch, submodule_origin_name):
     }
     try:
         make_prs(org, repo, config)
-    except PullRequestError as exception:
+    except CoreException as exception:
+        info_out(exception.__class__.__name__)
         error_out(str(exception))
-
-
-def error_out(msg, raise_abort=True):
-    click.echo(click.style(msg, fg="red"))
-    if raise_abort:
         raise click.Abort
+
+
+def error_out(msg):
+    click.echo(click.style(msg, fg="red"))
+
+
+def info_out(msg):
+    click.echo(click.style(msg, fg="yellow"))
