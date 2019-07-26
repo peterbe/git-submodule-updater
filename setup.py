@@ -14,6 +14,7 @@ setup(
     url="https://github.com/peterbe/git-submodule-updater",
     description="Lemme make a PR for you to update that git submodule",
     long_description=open(path.join(_here, "README.md")).read(),
+    long_description_content_type="text/markdown",
     license="MPL 2.0",
     classifiers=[
         "Programming Language :: Python",

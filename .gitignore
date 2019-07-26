@@ -1,1 +1,3 @@
 git_submodule_updater.egg-info
+build/
+dist/
