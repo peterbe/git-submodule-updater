@@ -64,16 +64,9 @@ def make_branch(repo_path, config):
     short_sha2 = sub_repo.git.rev_parse(sha2, short=7)
 
     new_branch_name = f"update-{name}-{short_sha}-to-{short_sha2}"
-    print("new_branch_name", new_branch_name)
-    current = repo.create_head(new_branch_name)
-    current.checkout()
-    repo.git.add(A=True)
-    msg = f"Update submodule {name!r} from {short_sha} to {short_sha2}"
-    repo.git.commit(["-m", msg])
-    pushed = repo.git.push("origin", new_branch_name)
-    print("PUSHED:")
-    print(repr(pushed))
+    print("New branch name", new_branch_name)
 
+    # Check that the branch and PR doesn't already exist
     g = Github(GITHUB_ACCESS_TOKEN)
     # Bail if we already have a PR by this branch name
     repo_name = config["repo_name"]
@@ -87,6 +80,15 @@ def make_branch(repo_path, config):
         if new_branch_name in branch_ref_name:
             url = pull.raw_data["_links"]["html"]["href"]
             raise PullRequestError(f"Already at a pull request at {url}")
+
+    current = repo.create_head(new_branch_name)
+    current.checkout()
+    repo.git.add(A=True)
+    msg = f"Update submodule {name!r} from {short_sha} to {short_sha2}"
+    repo.git.commit(["-m", msg])
+    pushed = repo.git.push("origin", new_branch_name)
+    print("PUSHED:")
+    print(repr(pushed))
 
     # https://github.com/PyGithub/PyGithub/blob/6e79d2704b8812d26435b21c1258c766418ab25e/github/Repository.py#L1207
     body = "Updating the submodule! 😊\n"
