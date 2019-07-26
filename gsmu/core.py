@@ -9,19 +9,6 @@ from github import Github
 GITHUB_ACCESS_TOKEN = config("GITHUB_ACCESS_TOKEN")
 
 
-def make_prs(org, repo, config):
-    clone_url = f"git@github.com:{org}/{repo}.git"
-    name = repo
-    config["repo_name"] = f"{org}/{repo}"
-    with tempfile.TemporaryDirectory() as tmpdir:
-        destination = Path(tmpdir) / name
-        cmd = f"git clone --depth=50 {clone_url} {destination}".split()
-        completed_process = subprocess.run(cmd, capture_output=True)
-        if completed_process.returncode:
-            raise GitCloneError(completed_process.stderr.decode("utf-8"))
-        make_branch(destination, config)
-
-
 class CoreException(Exception):
     """Exists for the benefit of making the cli easier to catch exceptions."""
 
@@ -36,6 +23,23 @@ class SubmoduleFindingError(CoreException):
 
 class PullRequestError(CoreException):
     """when struggling to find, edit, or make pull request."""
+
+
+class NothingToUpdateError(CoreException):
+    """when you discover the submodule is totally up-to-date already."""
+
+
+def make_prs(org, repo, config):
+    clone_url = f"git@github.com:{org}/{repo}.git"
+    name = repo
+    config["repo_name"] = f"{org}/{repo}"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        destination = Path(tmpdir) / name
+        cmd = f"git clone --depth=50 {clone_url} {destination}".split()
+        completed_process = subprocess.run(cmd, capture_output=True)
+        if completed_process.returncode:
+            raise GitCloneError(completed_process.stderr.decode("utf-8"))
+        make_branch(destination, config)
 
 
 def make_branch(repo_path, config):
@@ -70,6 +74,9 @@ def make_branch(repo_path, config):
     remote.pull(branch_name)
     sha2 = sub_repo.head.object.hexsha
     short_sha2 = sub_repo.git.rev_parse(sha2, short=7)
+
+    if sha == sha2:
+        raise NothingToUpdateError(f"Latest sha is already {sha}")
 
     new_branch_name = f"update-{name}-{short_sha}-to-{short_sha2}"
     print("New branch name", new_branch_name)
